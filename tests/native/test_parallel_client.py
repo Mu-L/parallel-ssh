@@ -1661,7 +1661,7 @@ class ParallelSSHClientTest(unittest.TestCase):
                                     return_list=True)
         client.join(output, consume_output=True)
         single_client = list(client._host_clients.values())[0]
-        del client
+        client.disconnect()
         self.assertEqual(single_client.session, None)
 
     def test_client_disconnect_error(self):

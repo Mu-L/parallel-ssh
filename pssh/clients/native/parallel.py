@@ -220,17 +220,6 @@ class ParallelSSHClient(BaseParallelSSHClient):
             return_list=return_list, read_timeout=read_timeout if read_timeout else timeout,
         )
 
-    def __del__(self):
-        if not hasattr(self, '_host_clients'):
-            return
-        for s_client in self._host_clients.values():
-            try:
-                s_client.disconnect()
-            except Exception as ex:
-                logger.debug("Client disconnect failed with %s", ex)
-                pass
-            del s_client
-
     def _make_ssh_client(self, host_i, host):
         auth_thread_pool = True
         logger.debug("Make client request for host %s, (host_i, host) in clients: %s",

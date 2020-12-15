@@ -27,7 +27,7 @@ from pssh.output import HostOutput
 from pssh.exceptions import UnknownHostException, \
     AuthenticationException, ConnectionErrorException, SessionError, \
     HostArgumentException, SFTPError, SFTPIOError, Timeout, SCPError, \
-    ProxyError, PKeyFileError
+    ProxyError, PKeyFileError, ConnectionError
 from pssh.clients.ssh.parallel import ParallelSSHClient
 
 from .base_ssh_case import PKEY_FILENAME, PUB_FILE, USER_CERT_PRIV_KEY, \
@@ -227,7 +227,7 @@ class LibSSHParallelTest(unittest.TestCase):
 
     def test_pssh_client_timeout(self):
         # 1ms timeout
-        client_timeout = 0.00001
+        client_timeout = 0.0001
         client = ParallelSSHClient([self.host], port=self.port,
                                    pkey=self.user_key,
                                    timeout=client_timeout,
@@ -236,8 +236,9 @@ class LibSSHParallelTest(unittest.TestCase):
         output = client.run_command('sleep 1', stop_on_errors=False)
         dt = datetime.now() - now
         pssh_logger.debug("Run command took %s", dt)
-        self.assertIsInstance(output[0].exception,
-                              Timeout)
+        if not (isinstance(output[0].exception, Timeout) or \
+                isinstance(output[0].exception, ConnectionError)):
+            raise AssertionError(output[0].exception)
 
     def test_connection_timeout(self):
         client_timeout = .01
@@ -478,6 +479,18 @@ class LibSSHParallelTest(unittest.TestCase):
             for host_out in output:
                 stdout = list(host_out.stdout)
                 self.assertListEqual(stdout, [self.resp])
+
+    def test_client_disconnect(self):
+        client = ParallelSSHClient([self.host],
+                                   port=self.port,
+                                   pkey=self.user_key,
+                                   num_retries=1)
+        output = client.run_command(self.cmd,
+                                    return_list=True)
+        client.join(output, consume_output=True)
+        single_client = list(client._host_clients.values())[0]
+        client.disconnect()
+        self.assertTrue(single_client.sock.closed)
 
     # def test_multiple_run_command_timeout(self):
     #     client = ParallelSSHClient([self.host], port=self.port,

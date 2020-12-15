@@ -64,6 +64,16 @@ class BaseParallelSSHClient(object):
         self.identity_auth = identity_auth
         self._check_host_config()
 
+    def __del__(self):
+        self.disconnect()
+
+    def disconnect(self):
+        if not hasattr(self, '_host_clients') or self._host_clients is None:
+            return
+        cmds = [spawn(client.disconnect) for client in self._host_clients.values()]
+        joinall(cmds, timeout=self.timeout, raise_error=False)
+        self._host_clients = None
+
     def _check_host_config(self):
         if self.host_config is None:
             return

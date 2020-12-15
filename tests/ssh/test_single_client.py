@@ -81,14 +81,6 @@ class SSHClientTest(SSHTestCase):
         self.client.wait_finished(host_out)
         self.assertTrue(self.client.finished(host_out.channel))
 
-    def test_client_disconnect_on_del(self):
-        client = SSHClient(self.host, port=self.port,
-                           pkey=self.user_key,
-                           num_retries=1)
-        client_sock = client.sock
-        del client
-        self.assertTrue(client_sock.closed)
-
     def test_client_read_timeout(self):
         client = SSHClient(self.host, port=self.port,
                            pkey=self.user_key,
