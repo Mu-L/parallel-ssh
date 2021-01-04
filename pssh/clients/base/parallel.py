@@ -103,7 +103,6 @@ class BaseParallelSSHClient(object):
                 encoding=encoding, read_timeout=read_timeout)
             return shell
         except (GTimeout, Exception) as ex:
-            host = ex.host if hasattr(ex, 'host') else None
             logger.error("Failed to run on host %s - %s", host, ex)
             raise ex
 
@@ -199,17 +198,17 @@ class BaseParallelSSHClient(object):
 
     def _get_output_from_cmds(self, cmds, raise_error=False,
                               return_list=True):
-        _cmds = [spawn(self._get_output_from_greenlet, cmd, raise_error=raise_error)
-                 for cmd in cmds]
+        _cmds = [spawn(self._get_output_from_greenlet, host_i, cmd, raise_error=raise_error)
+                 for host_i, cmd in enumerate(cmds)]
         finished = joinall(_cmds, raise_error=True)
         return [f.get() for f in finished]
 
-    def _get_output_from_greenlet(self, cmd, raise_error=False):
+    def _get_output_from_greenlet(self, host_i, cmd, raise_error=False):
         try:
             host_out = cmd.get()
             return host_out
         except (GTimeout, Exception) as ex:
-            host = ex.host if hasattr(ex, 'host') else None
+            host = self.hosts[host_i]
             if isinstance(ex, GTimeout):
                 ex = Timeout()
             if raise_error:
@@ -280,7 +279,6 @@ class BaseParallelSSHClient(object):
                 use_pty=use_pty, encoding=encoding, read_timeout=read_timeout)
             return host_out
         except (GTimeout, Exception) as ex:
-            host = ex.host if hasattr(ex, 'host') else None
             logger.error("Failed to run on host %s - %s", host, ex)
             raise ex
 
