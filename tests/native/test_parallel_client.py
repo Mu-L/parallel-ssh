@@ -1936,6 +1936,16 @@ class ParallelSSHClientTest(unittest.TestCase):
                 stdout = list(host_out.stdout)
                 self.assertListEqual(stdout, [self.resp])
 
+    def test_modifying_hosts_list_join_output_with_errors(self):
+        client = ParallelSSHClient(
+            [self.host, '127.0.99'],
+            port=self.port,
+            pkey=self.user_key,
+        )
+        output = client.run_command(self.cmd, stop_on_errors=False)
+        client.hosts = [self.host]
+        client.join(output)
+
     # TODO:
     # * forward agent enabled
     # * password auth
