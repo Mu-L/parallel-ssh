@@ -1937,6 +1937,9 @@ class ParallelSSHClientTest(unittest.TestCase):
                 self.assertListEqual(stdout, [self.resp])
 
     def test_modifying_hosts_list_join_output_with_errors(self):
+        """Error handling in join and run_command should not be affected
+        by changing host list.
+        """
         client = ParallelSSHClient(
             [self.host, '127.0.99'],
             port=self.port,
